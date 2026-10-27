@@ -1,6 +1,8 @@
 # S-Factor — Technical Requirements (draft v0.1)
 
-Date: 26 Oct 2026 · Status: **Demo planning; integration subject to landing-page-team agreement**
+Updated 27 Oct 2026 · Status: **Demo planning; integration subject to landing-page-team agreement**
+
+Read DECISIONS.md first. Only mariusheider-ext may be used for mariusheider-ext/S_Factor_Game, main. Never use the personal GitHub account. Work chat owns documentation; Claude implements.
 
 ## 1. Technology choice
 
@@ -45,7 +47,7 @@ Suggested outgoing messages (from child game to parent):
 
 - For the standalone demo, no `postMessage` consumer is needed; a local result/CTA works.
 - In production, restrict `targetOrigin` to the known landing-page origin. Parents must validate incoming `event.origin` and message schema; do **not** use a permissive wildcard for sensitive messaging.
-- Consider a parent-controlled CTA/lead form after completion. Do not send phone numbers, email addresses or names via URL query parameters, analytics events or publicly visible logs.
+- Consider a parent-controlled form after challenge completion. Recovered later team ideation gates result visibility behind opt-in; the result-first demo is not production approval. Keep scoring separate from result visibility; no live gate or WhatsApp implementation is requested. Do not send phone numbers, email addresses or names via URL query parameters, analytics events or publicly visible logs.
 - Domain, iframe height, route, exact form behavior and ownership **OPEN** until meeting.
 
 ## 5. Basic analytics contract
@@ -59,8 +61,10 @@ Suggested events:
 - `challenge_view`, `challenge_start`, `challenge_first_interaction`, `challenge_complete`
 - `challenge_exit` only when the app observes an explicit exit/navigation; background/unload is not reliable evidence of an exit
 - `game_complete`
-- `result_view`, `replay_click`, `share_click`
-- `form_view`, `form_submit_success` (**owned by landing page**, should not be emitted speculatively by the game)
+- `result_view`, `replay_click`, `share_click`, `continue_click`
+- `distraction_shown`, `distraction_tap` with non-sensitive message template ID only
+- `form_view`, `form_submit_success` (actual form-owning component; landing-page ownership is proposed, not assigned; never emit speculatively)
+- `ad_impression`, `ad_click` belong to ad systems if available, never fabricated by the game.
 
 For challenge events: `factor`, `attempt`, `elapsed_ms`, `result` and where appropriate non-sensitive raw gameplay counts. Never treat a started challenge as an interaction. Do not assert precise reasons for abandonment; infer drop-off from funnels in aggregated sessions, not from guessed motives.
 
@@ -74,7 +78,7 @@ Analytics consent, vendor selection, retention, pseudonymous session ID, cookie 
 
 ## 7. Repo, building and deployment
 
-Suggested repository name: `S_Factor_Game` under an **authorized work GitHub account or organization**. Private repository until explicit approval of public exposure. The deployed demo URL is separate from repository access.
+Existing repository: `mariusheider-ext/S_Factor_Game`, branch `main`; do not recreate or change owner. Private repository until explicit approval of public exposure. The deployed demo URL is separate from repository access.
 
 Use a standard Vite project so these npm commands are supported after scaffold:
 
@@ -121,5 +125,5 @@ Use `docs/GITHUB_SETUP_WINDOWS.md` for exact steps.
 | Interface not playable in public setting | No required camera, pose, sound, workout or sensor permission |
 | Unclear physical exercise approval | Treat originals as optional separate activation pending Isha team sign-off |
 | Game scores mistaken for psychological evaluation | Explicit 'game challenge' framing |
-| Contact form/consent not aligned | Keep out of demo; landing-page team owns until specified |
+| Contact form/consent not aligned | Keep out of demo; form/consent owner still needs agreement |
 | Wrong GitHub account or inadvertent publication | Check account, remote, repository visibility and permissions prior to push/deploy |

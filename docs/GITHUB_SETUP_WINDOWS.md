@@ -1,5 +1,7 @@
 # Windows / GitHub setup — two GitHub accounts
 
+Current status, 27 October 2026: repository already exists as mariusheider-ext/S_Factor_Game on main. Only use mariusheider-ext, never the personal GitHub account. Initial extraction, git init and repo creation instructions below are historical setup guidance; do not repeat them for this existing checkout.
+
 Target folder:
 
 ```text

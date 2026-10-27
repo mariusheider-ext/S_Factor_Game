@@ -22,3 +22,8 @@ Thumbs.db
 *.log
 npm-debug.log*
 *.tmp
+
+# Local-only material (not published)
+.claude/
+work/
+docs/Documents from team/

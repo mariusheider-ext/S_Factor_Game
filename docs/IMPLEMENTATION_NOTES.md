@@ -12,7 +12,7 @@ npm run build      # type-check + static build in dist/
 npm run preview    # serve the built dist/
 ```
 
-Requires Node.js (tested with Node 24.21 / npm 11.19). Vite `base` is `./`, so `dist/` works from any sub-path. No deployment workflow was added.
+Requires Node.js (tested with Node 24.21 / npm 11.19). Production builds use the Vite `base` `/S_Factor_Game/` for the GitHub Pages project URL. `.github/workflows/pages.yml` runs the tests, builds and deploys `dist/` to GitHub Pages on every push to `main`.
 
 Developer-only URL options (no player settings):
 

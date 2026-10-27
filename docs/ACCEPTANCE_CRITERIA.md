@@ -1,5 +1,7 @@
 # S-Factor — Acceptance Criteria (draft v0.1)
 
+Read `DECISIONS.md` first for the latest user review and provisional choices.
+
 Status: **Proposed**, to guide an AI coding agent and objective demo review. Use `[x]` only after testing a running app.
 
 ## A. Must-have for first playable demo
@@ -13,7 +15,7 @@ Status: **Proposed**, to guide an AI coding agent and objective demo review. Use
 - [ ] **A07** Sharpness: 4×4 grid shows target and decoys; player can earn more than ten valid hits within 30 seconds; hits/incorrect taps are counted; tiles change positions/content.
 - [ ] **A08** Sharpness: notifications increase distraction without preventing the user from identifying/clicking valid targets; round ends at 30s and yields numeric score.
 - [ ] **A09** Stability: user controls tilt/lean with touch left/right; visible balance state responds; score derives from stable time; failure does not permanently prevent progression.
-- [ ] **A10** Stamina: clearly visible rhythmic cue supports timed taps; arbitrary rapid tapping is not optimal; game records timed hits/misses and ends automatically.
+- [ ] **A10** Provisional rhythm Stamina: visible cue supports timed taps; rapid arbitrary tapping is not optimal; hits/misses/extra taps are recorded and runner feedback responds. If energy management is chosen, update this criterion before implementation.
 - [ ] **A11** Stillness: animation visibly settles over fixed duration; in-game notifications occur; touches make ripples without trapping the user; game finishes even if user is imperfect.
 - [ ] **A12** Each challenge stores separate raw metrics and a normalized 0–100 game score.
 - [ ] **A13** Result Card visibly shows all four named scores; score values match the just-finished session.
@@ -34,7 +36,7 @@ Status: **Proposed**, to guide an AI coding agent and objective demo review. Use
 - [ ] **B07** Player understands each challenge from one short instruction and on-screen feedback.
 - [ ] **B08** A person can complete the entire experience while seated without other equipment.
 - [ ] **B09** Inactive/background tab does not silently grant perfect Stillness score; timer/resume behavior is explicit.
-- [ ] **B10** End-to-end duration is recorded and reasonably near the campaign target (about two minutes), with exact target pending sign-off.
+- [ ] **B10** End-to-end and per-round durations are recorded and configurable. No unconfirmed duration is advertised. 30/25/25/25s are provisional; final timing, including 60s Stillness option, awaits review.
 
 ## C. Landing-page handoff / analytics readiness
 
@@ -59,3 +61,20 @@ Status: **Proposed**, to guide an AI coding agent and objective demo review. Use
 ## Review protocol
 
 Record a short end-to-end screen capture and test on at least one Android and one iPhone device. For each defect record browser/device, reproduction steps, expected behavior and actual behavior. Mark untested items honestly; do not state all acceptance criteria pass based only on a successful desktop run.
+
+
+## E. User review corrections — 27 October
+
+- [ ] **E01** All active challenges reuse one minimal header; no other-factor tabs/meters.
+- [ ] **E02** One centrally defined icon per factor; no inconsistent substitutions.
+- [ ] **E03** Home omits camera slogan and unconfirmed timing claims.
+- [ ] **E04** Sharpness distractions never overlap/intercept target tiles or shift the playfield; message reactions recorded separately.
+- [ ] **E05** Simulated conversational messages and optional original chime create reviewable distractions; muted/reduced-motion modes work.
+- [ ] **E06** Stillness message taps count as disturbances; pause/exit/sound controls do not.
+- [ ] **E07** Result uses real run scores, no sample constants or prominent mockup disclaimers.
+- [ ] **E08** Continue leads to an honest local handoff panel until final destination is agreed; no false form_view/submission events.
+- [ ] **E09** Stamina choice and timing defaults are documented as provisional, with configurable durations.
+
+## Recovered-context review (27 October; no extra demo scope)
+
+Before production approval, explicitly select the result/form ordering, CTA destination and form owner. The later historical team funnel gated results behind contact opt-in and continued with a WhatsApp Adiyogi invitation; the current result-first demo does not demonstrate approval of that order. See RECOVERED_CONTEXT.md for source attribution and alternatives. Do not mark these stakeholder decisions complete based on a working local demo.
