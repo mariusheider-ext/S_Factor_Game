@@ -1,0 +1,24 @@
+# JavaScript build products
+node_modules/
+dist/
+.vite/
+coverage/
+*.tsbuildinfo
+
+# Local secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Local machine/editors
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Temporary files/logs
+*.log
+npm-debug.log*
+*.tmp
