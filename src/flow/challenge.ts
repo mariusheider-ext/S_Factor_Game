@@ -36,15 +36,19 @@ export interface ChallengeInstance {
   destroy(): void;
 }
 
+/**
+ * Visual tutorial shown before a round: a frozen practice preview of the playfield
+ * plus 2–3 short captions. It has no timer, scoring or messages, and it must never
+ * touch round state or analytics.
+ */
+export interface TutorialDefinition {
+  steps: string[];
+  /** Builds the preview in `stage` and calls `goTo` to highlight a caption. Returns cleanup. */
+  mount(stage: HTMLElement, goTo: (step: number) => void): () => void;
+}
+
 export interface ChallengeDefinition {
   id: FactorId;
-  /** One short instruction shown before play. */
-  instruction: string;
-  /** Short how-to lines for the intro card. */
-  howTo: string[];
-  /** Whether the intro explains that simulated messages will appear. */
-  simulatedMessages: boolean;
-  /** Label for the explicit start button. */
-  startLabel: string;
+  tutorial: TutorialDefinition;
   mount(ctx: ChallengeContext): ChallengeInstance;
 }

@@ -1,3 +1,4 @@
+import { createRng } from '../../core/rng';
 import type { ChallengeDefinition } from '../../flow/challenge';
 import { scoreSharpness } from '../../results/scoring';
 import { h } from '../../ui/dom';
@@ -11,10 +12,50 @@ const MESSAGE_COUNT = 4;
 
 export const sharpness: ChallengeDefinition = {
   id: 'sharpness',
-  instruction: 'Tap the tile that matches the symbol shown above the grid.',
-  howTo: ['Each match brings a new grid.', 'Wrong taps count against you, so aim before you tap.'],
-  simulatedMessages: true,
-  startLabel: 'Start',
+  tutorial: {
+    steps: ['This is the symbol to find.', 'Tap the matching tile. Try it now.', 'Each match brings a new grid. Wrong taps count against you.'],
+    mount(stage, goTo) {
+      // Same grid and cue components as the round, with a local practice state.
+      const rng = createRng(11);
+      const state = createSharpness(rng);
+      let step = 0;
+      const cueSymbol = h('span', { class: 'sh-cue-symbol' });
+      const cue = h('div', { class: 'sh-cue tut-glow' }, [h('span', { class: 'sh-cue-label' }, ['Find']), cueSymbol]);
+      const tiles = Array.from({ length: 16 }, (_, i) =>
+        h('button', { class: 'sh-tile', type: 'button', onclick: () => onTile(i) }),
+      );
+      const render = () => {
+        cueSymbol.innerHTML = shapeSvg(state.target);
+        tiles.forEach((tile, i) => {
+          tile.innerHTML = shapeSvg(state.tiles[i]);
+          tile.setAttribute('aria-label', SHAPE_LABELS[state.tiles[i]]);
+          tile.classList.toggle('tut-glow', step === 1 && state.tiles[i] === state.target);
+        });
+      };
+      const onTile = (i: number) => {
+        const result = tapTile(state, i, rng);
+        if (result === 'hit' && step < 2) {
+          step = 2;
+          goTo(2);
+        }
+        render();
+        tiles[i].classList.remove('hit', 'miss');
+        void tiles[i].offsetWidth;
+        tiles[i].classList.add(result);
+      };
+      stage.classList.add('sharpness');
+      stage.append(cue, h('div', { class: 'sh-grid', role: 'group', 'aria-label': 'Practice grid' }, tiles));
+      render();
+      const timer = setTimeout(() => {
+        if (step > 0) return;
+        step = 1;
+        cue.classList.remove('tut-glow');
+        goTo(1);
+        render();
+      }, 1600);
+      return () => clearTimeout(timer);
+    },
+  },
 
   mount(ctx) {
     const state = createSharpness(ctx.rng);

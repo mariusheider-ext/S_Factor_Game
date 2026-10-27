@@ -22,13 +22,54 @@ const FEEDBACK: Record<TapResult | 'missed', { text: string; color: string }> = 
 
 export const stamina: ChallengeDefinition = {
   id: 'stamina',
-  instruction: 'Tap once on every beat to keep the runner going.',
-  howTo: [
-    'Tap when a marker reaches the ring.',
-    'Steady timing builds your streak. Extra taps break it.',
-  ],
-  simulatedMessages: false,
-  startLabel: 'Start',
+  tutorial: {
+    steps: ['A marker slides toward the ring.', 'Tap as it reaches the ring. Try it.', 'Tap once per beat. Extra taps break your streak.'],
+    mount(stage, goTo) {
+      // Practice preview of the beat track: one marker per cycle, no scoring or runner.
+      const CYCLE_MS = 2000;
+      const TRAVEL_MS = 1600;
+      const ring = h('span', { class: 'tut-beat-ring' });
+      const dot = h('span', { class: 'tut-beat-dot' });
+      const label = h('span', { class: 'tut-beat-feedback', 'aria-live': 'polite' });
+      const pad = h('button', { class: 'tap-pad', type: 'button', 'aria-label': 'Tap on the beat' }, ['TAP']);
+      stage.classList.add('stamina');
+      stage.append(h('div', { class: 'tut-track' }, [ring, dot, label]), pad);
+      const start = performance.now();
+      let step = 0;
+      /** Time relative to the current marker's arrival at the ring (negative = still travelling). */
+      const sinceBeat = () => ((performance.now() - start) % CYCLE_MS) - TRAVEL_MS;
+      pad.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        const d = sinceBeat();
+        const key: TapResult = Math.abs(d) <= STAMINA_PARAMS.windowMs ? 'hit' : d < 0 ? 'early' : 'late';
+        label.textContent = FEEDBACK[key].text;
+        label.style.color = FEEDBACK[key].color;
+        if (key === 'hit' && step < 2) {
+          step = 2;
+          pad.classList.remove('tut-glow');
+          goTo(2);
+        }
+      });
+      pad.addEventListener('contextmenu', (e) => e.preventDefault());
+      const timer = setTimeout(() => {
+        if (step > 0) return;
+        step = 1;
+        pad.classList.add('tut-glow');
+        goTo(1);
+      }, 2000);
+      const loop = setInterval(() => {
+        const d = sinceBeat();
+        const frac = d < 0 ? -d / TRAVEL_MS : 0;
+        dot.style.left = `calc(40px + ${frac.toFixed(3)} * (100% - 56px))`;
+        dot.style.opacity = d > 250 ? '0' : '1';
+        ring.classList.toggle('on', Math.abs(d) <= STAMINA_PARAMS.windowMs);
+      }, 33);
+      return () => {
+        clearTimeout(timer);
+        clearInterval(loop);
+      };
+    },
+  },
 
   mount(ctx) {
     const state = createStamina(ctx.durationMs);

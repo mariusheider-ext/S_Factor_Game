@@ -7,16 +7,88 @@ import { createStage, textStyle } from '../../ui/stage';
 import { createStability, stepStability, STABILITY_PARAMS, type StabilityInput } from './logic';
 
 const MINT = FACTOR_HEX.stability;
+// Same tree-pose-inspired figure as the canvas drawing, for the tutorial preview.
+const TREE_FIGURE_SVG =
+  '<svg viewBox="0 0 100 120" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round"><path d="M50 116V64M50 64l12 18-10 4M50 64V30M16 26l34 4 34-4"/></g><circle cx="50" cy="16" r="8" fill="currentColor"/></svg>';
 const AMBER = 0xffb547;
 const CORAL = 0xff7a6b;
 const IVORY = 0xf5efe3;
 
 export const stability: ChallengeDefinition = {
   id: 'stability',
-  instruction: 'Keep the figure upright inside the green zone.',
-  howTo: ['Hold ◀ or ▶ to push the figure back toward the middle.', 'If it falls, it gets back up and you continue.'],
-  simulatedMessages: false,
-  startLabel: 'Start',
+  tutorial: {
+    steps: [
+      'Keep the marker inside the green zone.',
+      'Hold ◀ or ▶ to push it back to the middle. Try it.',
+      'Only time you actively keep in the zone scores. Falls score nothing.',
+    ],
+    mount(stage, goTo) {
+      // Practice preview: the same meter and hold buttons, with a gentle drift that never falls.
+      const p = STABILITY_PARAMS;
+      const pct = (deg: number) => ((deg + p.fallDeg) / (2 * p.fallDeg)) * 100;
+      const zone = h('span', {
+        class: 'tut-zone tut-glow',
+        style: `left:${pct(-p.safeDeg)}%;width:${pct(p.safeDeg) - pct(-p.safeDeg)}%`,
+      });
+      const marker = h('span', { class: 'tut-marker' });
+      const figure = h('span', { class: 'tut-figure', html: TREE_FIGURE_SVG });
+      const held = { left: false, right: false };
+      let step = 0;
+      const btn = (side: 'left' | 'right', label: string) => {
+        const b = h('button', { class: `hold-btn ${side}`, type: 'button', 'aria-label': `Push ${side}` }, [label]);
+        const set = (on: boolean) => {
+          held[side] = on;
+          b.classList.toggle('active', on);
+        };
+        b.addEventListener('pointerdown', (e) => {
+          e.preventDefault();
+          set(true);
+          if (step < 2) {
+            step = 2;
+            zone.classList.remove('tut-glow');
+            leftBtn.classList.remove('tut-glow');
+            rightBtn.classList.remove('tut-glow');
+            goTo(2);
+          }
+        });
+        for (const ev of ['pointerup', 'pointercancel', 'pointerleave']) b.addEventListener(ev, () => set(false));
+        b.addEventListener('contextmenu', (e) => e.preventDefault());
+        return b;
+      };
+      const leftBtn = btn('left', '◀  Hold');
+      const rightBtn = btn('right', 'Hold  ▶');
+      stage.classList.add('stability');
+      stage.append(
+        h('div', { class: 'tut-meter' }, [zone, marker]),
+        figure,
+        h('div', { class: 'tut-controls' }, [leftBtn, rightBtn]),
+      );
+      let angle = 0;
+      let drift = 7;
+      const timers = [
+        setTimeout(() => {
+          if (step > 0) return;
+          step = 1;
+          zone.classList.remove('tut-glow');
+          leftBtn.classList.add('tut-glow');
+          rightBtn.classList.add('tut-glow');
+          goTo(1);
+        }, 2200),
+      ];
+      const loop = setInterval(() => {
+        const input = (held.right ? 1 : 0) - (held.left ? 1 : 0);
+        angle = Math.max(-p.fallDeg + 3, Math.min(p.fallDeg - 3, angle + (drift + input * 22) * 0.033));
+        if (Math.abs(angle) >= p.fallDeg - 3) drift = -Math.sign(angle) * 7;
+        marker.style.left = `${pct(angle)}%`;
+        marker.classList.toggle('out', Math.abs(angle) > p.safeDeg);
+        figure.style.transform = `rotate(${angle}deg)`;
+      }, 33);
+      return () => {
+        timers.forEach(clearTimeout);
+        clearInterval(loop);
+      };
+    },
+  },
 
   mount(ctx) {
     const state = createStability(ctx.rng);

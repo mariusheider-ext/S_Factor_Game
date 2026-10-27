@@ -9,7 +9,7 @@ import { advanceStamina, createStamina, registerTap, scheduleBeats } from './sce
 import { continueDisturbance, createStillness, disturb, stepStillness } from './scenes/stillness/logic';
 
 describe('config', () => {
-  it('uses 30/25/25/25 s provisional defaults', () => {
+  it('uses the 30/30/25/45 s provisional defaults', () => {
     expect(resolveDurations('')).toEqual(DEFAULT_DURATIONS_MS);
   });
   it('accepts a developer override for a 60 s Stillness review', () => {
@@ -80,23 +80,49 @@ describe('Sharpness', () => {
   });
 });
 
-function simulateStability(policy: (s: ReturnType<typeof createStability>) => StabilityInput, seed: number) {
+function simulateStability(
+  policy: (s: ReturnType<typeof createStability>, t: number) => StabilityInput,
+  seed: number,
+  duration = 30_000,
+) {
   const rng = createRng(seed);
   const state = createStability(rng);
-  const duration = 25_000;
   for (let t = 0; t < duration; t += 16) {
-    stepStability(state, 16, policy(state), t / duration, rng);
+    stepStability(state, 16, policy(state, t), t / duration, rng);
   }
   return { state, score: scoreStability({ inZoneMs: state.inZoneMs, totalMs: state.totalMs, falls: state.falls }) };
 }
 
 describe('Stability', () => {
-  it('falls repeatedly and scores low without input', () => {
-    for (const seed of [1, 2, 3]) {
+  it('scores 0 for a completely untouched round, despite automatic resets', () => {
+    for (const seed of [1, 2, 3, 4, 5]) {
       const { state, score } = simulateStability(() => 0, seed);
       expect(state.falls).toBeGreaterThanOrEqual(3);
-      expect(score).toBeLessThan(40);
+      expect(state.inZoneMs).toBe(0);
+      expect(score).toBe(0);
     }
+  });
+
+  it('gives almost nothing for one brief input followed by inactivity', () => {
+    for (const seed of [1, 2, 3, 4, 5]) {
+      // 200 ms tap at 1 s, then nothing.
+      const { state, score } = simulateStability((_s, t) => (t >= 1000 && t < 1200 ? 1 : 0), seed);
+      expect(state.inZoneMs).toBeLessThanOrEqual(STABILITY_PARAMS.activeWindowMs + 200);
+      expect(score).toBeLessThanOrEqual(5);
+    }
+  });
+
+  it('does not credit time after a reset until the player acts again', () => {
+    const rng = createRng(4);
+    const state = createStability(rng);
+    let t = 0;
+    while (state.falls === 0 && t < 20_000) {
+      stepStability(state, 16, 1, 0.5, rng);
+      t += 16;
+    }
+    const credited = state.inZoneMs;
+    stepStability(state, STABILITY_PARAMS.recoverMs + 1000, 0, 0.5, rng);
+    expect(state.inZoneMs).toBe(credited);
   });
 
   it('can be held in the safe zone with steady corrections', () => {

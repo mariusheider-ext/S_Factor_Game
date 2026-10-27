@@ -18,7 +18,30 @@ const CHALLENGES: Record<FactorId, ChallengeDefinition> = { sharpness, stability
 const PAUSE_ICON =
   '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>';
 
+const SPEAKER_PATH = '<path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5H4z" fill="currentColor"/>';
+const SOUND_ON_ICON = `<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">${SPEAKER_PATH}<path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/></svg>`;
+const SOUND_OFF_ICON = `<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">${SPEAKER_PATH}<path d="M16 9.5l5 5M21 9.5l-5 5"/></svg>`;
+
 const pad2 = (n: number) => n.toString().padStart(2, '0');
+
+/** Points on the Home sequence ring, clockwise from the top (percent of the ring box). */
+const RING_POINTS = [
+  [50, 12],
+  [88, 50],
+  [50, 88],
+  [12, 50],
+];
+
+/** Arrowed arcs between the four sequence positions (viewBox 0–100, radius 38). */
+function ringArrowsSvg(): string {
+  const arcs = [0, 1, 2, 3].map((k) => {
+    const a0 = ((-90 + 90 * k + 26) * Math.PI) / 180;
+    const a1 = ((-90 + 90 * (k + 1) - 26) * Math.PI) / 180;
+    const pt = (a: number) => `${(50 + 38 * Math.cos(a)).toFixed(2)} ${(50 + 38 * Math.sin(a)).toFixed(2)}`;
+    return `<path d="M${pt(a0)} A38 38 0 0 1 ${pt(a1)}" marker-end="url(#seq-arrow)"/>`;
+  });
+  return `<svg class="seq-ring" viewBox="0 0 100 100" aria-hidden="true"><defs><marker id="seq-arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0L10 5L0 10z" fill="#5d7486"/></marker></defs><g fill="none" stroke="#3a5164" stroke-width="1.2">${arcs.join('')}</g></svg>`;
+}
 
 /** Central flow manager: Home → four challenges → Result. Owns transitions and progress. */
 export class App {
@@ -41,10 +64,12 @@ export class App {
   }
 
   private soundToggle(): HTMLButtonElement {
-    const btn = h('button', { class: 'sound-toggle', type: 'button', 'aria-pressed': String(sound.enabled) });
+    const btn = h('button', { class: 'sound-toggle', type: 'button', 'aria-label': 'Sound' });
     const label = () => {
-      btn.textContent = sound.enabled ? 'Sound: on' : 'Sound: off';
+      btn.innerHTML = sound.enabled ? SOUND_ON_ICON : SOUND_OFF_ICON;
       btn.setAttribute('aria-pressed', String(sound.enabled));
+      btn.title = sound.enabled ? 'Sound on' : 'Sound off';
+      btn.classList.toggle('off', !sound.enabled);
     };
     btn.addEventListener('click', () => {
       sound.setEnabled(!sound.enabled);
@@ -56,30 +81,31 @@ export class App {
 
   showHome(): void {
     this.runToken++;
-    const list = h(
-      'ul',
-      { class: 'factor-list' },
-      FACTOR_ORDER.map((id) =>
-        h('li', {}, [
-          h('span', { class: 'fl-icon', html: factorIcon(id, 28) }),
-          h('span', { class: 'fl-text' }, [
-            h('strong', { style: `color:${FACTORS[id].color}` }, [FACTORS[id].name]),
-            h('span', {}, [FACTORS[id].theme]),
+    // A non-interactive, numbered sequence (not buttons): the single Start button begins the run.
+    const sequence = h('div', { class: 'seq', html: ringArrowsSvg() }, [
+      h(
+        'ol',
+        { class: 'seq-list', 'aria-label': 'The four challenges, in order' },
+        FACTOR_ORDER.map((id, i) =>
+          h('li', { class: 'seq-item', style: `left:${RING_POINTS[i][0]}%;top:${RING_POINTS[i][1]}%` }, [
+            h('span', { class: 'seq-num', 'aria-hidden': 'true' }, [String(i + 1)]),
+            h('span', { class: 'seq-icon', html: factorIcon(id, 26) }),
+            h('span', { class: 'seq-name', style: `color:${FACTORS[id].color}` }, [FACTORS[id].name]),
           ]),
-        ]),
+        ),
       ),
-    );
+    ]);
     this.mountScreen(
       h('main', { class: 'screen home' }, [
+        h('div', { class: 'home-sound' }, [this.soundToggle()]),
         h('h1', { tabindex: -1, 'data-autofocus': true }, [
           h('span', { class: 'home-kicker' }, ['Think you’ve got the']),
           h('span', { class: 'home-title' }, ['S-Factor?']),
         ]),
         h('p', { class: 'lede' }, ['Four game challenges. One result card.']),
-        list,
+        sequence,
         h('div', { class: 'home-actions' }, [
           h('button', { class: 'btn primary', type: 'button', onclick: () => void this.startRun() }, ['Start']),
-          this.soundToggle(),
         ]),
       ]),
     );
@@ -138,24 +164,35 @@ export class App {
   private showIntro(def: ChallengeDefinition, index: number): Promise<void> {
     return new Promise((resolve) => {
       const info = FACTORS[def.id];
-      const children: (Node | string)[] = [
-        h('p', { class: 'intro-progress' }, [`${pad2(index + 1)} / ${pad2(FACTOR_ORDER.length)}`]),
-        h('span', { class: 'intro-icon', html: factorIcon(def.id, 56) }),
-        h('h1', { tabindex: -1, 'data-autofocus': true, style: `color:${info.color}` }, [info.name]),
-        h('p', { class: 'intro-instruction' }, [def.instruction]),
-        h('ul', { class: 'intro-howto' }, def.howTo.map((line) => h('li', {}, [line]))),
-      ];
-      if (def.simulatedMessages) {
-        children.push(
-          h('p', { class: 'intro-note' }, [
-            'Simulated messages will pop up during this round. They are part of the game: nothing is sent or received.',
-          ]),
-        );
-      }
-      children.push(
-        h('button', { class: 'btn primary', type: 'button', onclick: () => resolve() }, [def.startLabel]),
+      // Tutorial: practice preview + numbered captions. Nothing here is timed, scored or tracked.
+      const stage = h('div', { class: 'tutorial-stage' });
+      const steps = def.tutorial.steps.map((text, i) =>
+        h('li', {}, [h('span', { class: 'ts-num', 'aria-hidden': 'true' }, [String(i + 1)]), h('span', {}, [text])]),
       );
-      this.mountScreen(h('main', { class: `screen intro factor-${def.id}` }, children));
+      const goTo = (n: number) =>
+        steps.forEach((li, i) => {
+          li.classList.toggle('active', i === n);
+          li.classList.toggle('done', i < n);
+        });
+      let cleanupTutorial = () => {};
+      const start = () => {
+        cleanupTutorial();
+        resolve();
+      };
+      this.mountScreen(
+        h('main', { class: `screen intro factor-${def.id}` }, [
+          h('div', { class: 'intro-head' }, [
+            h('span', { class: 'intro-icon', html: factorIcon(def.id, 28) }),
+            h('h1', { tabindex: -1, 'data-autofocus': true, style: `color:${info.color}` }, [info.name]),
+            h('span', { class: 'intro-progress' }, [`${pad2(index + 1)} / ${pad2(FACTOR_ORDER.length)}`]),
+          ]),
+          stage,
+          h('ol', { class: 'tutorial-steps' }, steps),
+          h('button', { class: 'btn primary', type: 'button', onclick: start }, ['Start']),
+        ]),
+      );
+      goTo(0);
+      cleanupTutorial = def.tutorial.mount(stage, goTo);
       analytics.track('challenge_view', { factor: def.id, index: index + 1 });
     });
   }

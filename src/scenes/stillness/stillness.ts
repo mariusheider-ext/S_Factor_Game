@@ -19,13 +19,23 @@ interface Ripple {
 
 export const stillness: ChallengeDefinition = {
   id: 'stillness',
-  instruction: 'Leave the water undisturbed until the time runs out.',
-  howTo: [
-    'You do not need to tap anything. The water settles on its own.',
-    'Touching the water or reacting to a message stirs it up again.',
-  ],
-  simulatedMessages: true,
-  startLabel: 'Start the calm',
+  tutorial: {
+    steps: ['Let the water settle.', 'Leave the screen untouched.'],
+    mount(stage, goTo) {
+      // Static preview of the same water surface; the rings fade out as it settles.
+      stage.classList.add('stillness');
+      stage.append(
+        h('div', { class: 'water tut-water', role: 'img', 'aria-label': 'Water surface settling' }, [
+          h('span', { class: 'tut-ring' }),
+          h('span', { class: 'tut-ring' }),
+          h('span', { class: 'tut-ring' }),
+          h('span', { class: 'tut-settle' }, ['Water settling']),
+        ]),
+      );
+      const timer = setTimeout(() => goTo(1), 2000);
+      return () => clearTimeout(timer);
+    },
+  },
 
   mount(ctx) {
     const state = createStillness(ctx.durationMs);
@@ -130,14 +140,14 @@ export const stillness: ChallengeDefinition = {
           }
         }
 
-        // Calm meter.
+        // Settling meter: how far the water's visible motion has died down (not the player's state).
         const calm = Math.round((1 - state.energy) * 100);
         const bw = Math.min(w - 64, 280);
         const bx = (w - bw) / 2;
         const by = hgt - 28;
         g.fillStyle(0x0a2633, 0.9).fillRoundedRect(bx, by, bw, 10, 5);
         g.fillStyle(AQUA, 0.9).fillRoundedRect(bx, by, Math.max(10, (bw * calm) / 100), 10, 5);
-        calmText.setPosition(w / 2, by - 6).setText(`Calm ${calm}%`);
+        calmText.setPosition(w / 2, by - 6).setText(`Water settling ${calm}%`);
       },
     });
 

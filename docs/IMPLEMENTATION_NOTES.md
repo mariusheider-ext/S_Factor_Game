@@ -37,12 +37,15 @@ Phaser 3.90 renders the animated playfields (Stability, Stamina, Stillness). UI 
 
 ## Mechanics as built (all provisional)
 
-Default durations are 30/25/25/25 s. Home makes no duration claim.
+Default durations are 30/30/25/45 s (Sharpness/Stability/Stamina/Stillness, set after the first phone review). Home makes no duration claim.
+
+- **Home**: the four factors appear as a non-interactive, numbered sequence around a ring (Sharpness at the top, clockwise). The only button is Start. The sound control is a speaker / muted-speaker icon (accessible name "Sound", `aria-pressed` state), on Home and in the pause menu.
+- **Tutorials**: before each round, a practice preview built from the same visual components (grid and cue, meter and hold buttons, beat track and tap pad, water) with 2–3 numbered captions and highlighted targets. Tutorials have no timer, scoring, falling, rhythm progression or messages, and they emit no analytics. One Start button begins a fresh timed round.
 
 - **Sharpness**: a 4×4 grid with exactly one target among decoys. Every hit reshuffles the grid, and the target symbol changes every 4 hits. Hits are unlimited. Shape alone identifies the target (all tiles share one colour). Wrong taps count as `incorrect`. Message taps are counted separately as `distractionTaps` and carry no score penalty. Taps are locked for 150 ms after a reshuffle so a double tap is not judged against the new grid.
-- **Stability**: a simplified inverted pendulum with changing push forces that get stronger over the round. Hold ◀/▶ (or the arrow keys or A/D). The safe zone is ±12°, and the figure falls at ±32°. After a fall it pauses for 1.2 s, then recovers. The figure is abstract and tree-pose-inspired.
+- **Stability**: a simplified inverted pendulum with changing push forces that get stronger over the round. Hold ◀/▶ (or the arrow keys or A/D). The safe zone is ±12°, and the figure falls at ±32°. After a fall it pauses for 1.2 s, then resets upright. Only *actively maintained* balance is credited: time counts only while upright, inside the zone and within 1.5 s of a corrective input. The fall, the recovery pause and the automatic reset never earn time, and the reset clears the last input, so an untouched round scores 0 and one brief input followed by inactivity earns almost nothing (regression tests in `src/logic.test.ts`). The safe zone is fixed; the planned moving/shrinking zone is not built yet. The figure is abstract and tree-pose-inspired.
 - **Stamina**: the provisional rhythm baseline only: 1 beat/s, a ±200 ms window, the first beat at 1.5 s, one credited tap per beat. Every other tap counts as an extra tap and breaks the streak. Markers move toward a ring. The runner's speed follows the streak, and it stumbles on misses and off-beat taps. An optional soft tick plays on each beat. Energy management is not implemented.
-- **Stillness**: an explicit "Start the calm" button, then no input is needed. The water's energy decays visibly over the round. A water touch or a message tap creates ripples and opens a 3 s recovery window. A finger held on the water keeps the window open. Pause, exit and sound controls do not count. The round has at least four messages, scaled up for longer rounds.
+- **Stillness**: an explicit Start button, then no input is needed. The meter is labelled "Water settling" and describes the water's visible motion, not the player. The water's energy decays visibly over the round. A water touch or a message tap creates ripples and opens a 3 s recovery window. A finger held on the water keeps the window open. Pause, exit and sound controls do not count. The round has at least four messages, scaled up for longer rounds.
 - **Messages**: a fixed-height lane is reserved from the start and sits outside the grid and water. Messages slide in, have an unread badge and a small "simulated" tag. A tap expands the message inside the lane. Messages auto-hide and never need to be dismissed. The texts are placeholder examples (`src/ui/messageLane.ts`), not the recovered historical texts. The chime is an original synthesized tone with a sound toggle on Home and in the pause menu.
 - **Hidden tab / pause**: the clock stops, and the round resumes only via Resume. Hidden-tab pauses are counted as `interruptions`.
 
@@ -51,7 +54,7 @@ Default durations are 30/25/25/25 s. Home makes no duration claim.
 | Factor | Formula |
 |---|---|
 | Sharpness | `min(100, round(100·correct / max(1, correct + 2·incorrect + 6)))` (GDD placeholder) |
-| Stability | `clamp(round(100·inZoneMs/totalMs − 5·falls))` |
+| Stability | `clamp(round(100·inZoneMs/totalMs − 5·falls))`, where `inZoneMs` is actively maintained in-zone time only |
 | Stamina | `clamp(round(100·max(0, hits − 0.5·extraTaps) / scheduledBeats))` (DECISIONS proposal) |
 | Stillness | `clamp(round(100·undisturbedMs/totalMs))` with a 3 s recovery window per disturbance |
 

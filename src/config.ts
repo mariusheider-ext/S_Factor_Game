@@ -5,12 +5,12 @@ export type FactorId = 'sharpness' | 'stability' | 'stamina' | 'stillness';
 
 export const FACTOR_ORDER: readonly FactorId[] = ['sharpness', 'stability', 'stamina', 'stillness'];
 
-/** Provisional round durations (30/25/25/25 s). Final timing is an open decision. */
+/** Provisional round durations (30/30/25/45 s, after the first phone review). Final timing is an open decision. */
 export const DEFAULT_DURATIONS_MS: Readonly<Record<FactorId, number>> = {
   sharpness: 30_000,
-  stability: 25_000,
+  stability: 30_000,
   stamina: 25_000,
-  stillness: 25_000,
+  stillness: 45_000,
 };
 
 const MIN_OVERRIDE_S = 5;

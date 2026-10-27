@@ -10,6 +10,7 @@ export const STABILITY_PARAMS = {
   safeDeg: 12, // half-width of the green safe zone
   fallDeg: 32, // lean at which the figure falls
   recoverMs: 1200, // pause after a fall before balance is restored
+  activeWindowMs: 1500, // in-zone time only counts within this long after the last corrective input
   pushStart: 6, // push magnitude at the start of the round (deg/s²)
   pushEnd: 16, // push magnitude at the end of the round
   pushChangeMinMs: 1500,
@@ -26,7 +27,15 @@ export interface StabilityState {
   nextPushChangeAt: number;
   fallenUntil: number | null;
   falls: number;
+  /**
+   * Credited balanced time: upright, inside the safe zone AND actively held there
+   * (a corrective input within `activeWindowMs`). Falls, the recovery pause and the
+   * automatic reset never earn time, and the reset clears the last input so a
+   * player must act again after every fall.
+   */
   inZoneMs: number;
+  /** Round time of the last corrective input (-Infinity = none since start or last reset). */
+  lastInputAt: number;
   totalMs: number;
   /** Elapsed round time of the last step, used to time falls and push changes. */
   time: number;
@@ -43,6 +52,7 @@ export function createStability(rng: Rng): StabilityState {
     fallenUntil: null,
     falls: 0,
     inZoneMs: 0,
+    lastInputAt: Number.NEGATIVE_INFINITY,
     totalMs: 0,
     time: 0,
   };
@@ -86,10 +96,12 @@ function substep(state: StabilityState, dtMs: number, input: StabilityInput, pro
       state.angle = 0;
       state.velocity = 0;
       state.push = 0;
+      state.lastInputAt = Number.NEGATIVE_INFINITY;
     }
     return;
   }
 
+  if (input !== 0) state.lastInputAt = state.time;
   const accel = p.gravity * state.angle + state.push + input * p.control - p.damping * state.velocity;
   state.velocity += accel * dt;
   state.angle += state.velocity * dt;
@@ -101,5 +113,6 @@ function substep(state: StabilityState, dtMs: number, input: StabilityInput, pro
     state.fallenUntil = state.time + p.recoverMs;
     return;
   }
-  if (Math.abs(state.angle) <= p.safeDeg) state.inZoneMs += dtMs;
+  const active = state.time - state.lastInputAt <= p.activeWindowMs;
+  if (active && Math.abs(state.angle) <= p.safeDeg) state.inZoneMs += dtMs;
 }
