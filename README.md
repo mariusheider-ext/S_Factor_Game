@@ -1,6 +1,8 @@
 # S-Factor Game — project preparation
 
-**Status:** Planning package, 26 October 2026. **No playable game is implemented yet.**
+**Status:** Documentation updated 27 October 2026 after visual review. **A playable demo (v0.1.0, provisional mechanics) is implemented: run `npm install` then `npm run dev`; see [docs/IMPLEMENTATION_NOTES.md](docs/IMPLEMENTATION_NOTES.md).** Work chat maintains specs/prompts; Claude handles implementation.
+
+Read [docs/DECISIONS.md](docs/DECISIONS.md) first: latest user feedback and explicit provisional defaults override earlier wording and reference images. The user-supplied old-chat reconstruction is reconciled in [docs/RECOVERED_CONTEXT.md](docs/RECOVERED_CONTEXT.md). Historical concepts do not automatically become requirements. Claude is already implementing; this update does not restart or expand that assignment.
 
 **Goal:** Four short, touch-first, browser-based challenges (Sharpness → Stability → Stamina → Stillness) culminating in a shareable S-Factor Result Card. This is a demonstration of the proposed experience, not a validated psychological test.
 
@@ -26,7 +28,7 @@ S_Factor_Game/
 │   ├── ACCEPTANCE_CRITERIA.md
 │   ├── AI_IMPLEMENTATION_PROMPT.md
 │   └── GITHUB_SETUP_WINDOWS.md
-├── references/               # Concept art / 6 reference screens, to be created
+├── references/               # Six v1 mood references; not binding UI/copy
 ├── src/
 │   ├── scenes/               # Four playable Phaser challenge scenes
 │   ├── ui/                   # Navigation, timer, accessibility, results
@@ -46,7 +48,7 @@ The `src` and `public` directories are placeholders; the AI coding agent should 
 
 - **Agreed planning baseline:** Sharpness as a dynamic 4×4 symbol challenge; touch-controlled digital balance for Stability; rhythm-based Pace Runner for Stamina; passive water/notification challenge for Stillness.
 - These are *proposed alternatives*, not approved team requirements. The four PowerPoint slides remain the baseline concepts.
-- A full vertical-slice demo should include all four challenges and a mock result card; no real contacts, WhatsApp messages, camera capture, or backend are needed for the initial demo.
+- A full vertical-slice demo should include all four challenges and a result card calculated from the actual playthrough; no real contacts, WhatsApp messages, camera capture, or backend are needed for the initial demo.
 - The landing-page team owns the already-prepared landing-page draft **subject to explicit confirmation of integration ownership**.
 
 ## Deployment
@@ -57,4 +59,4 @@ Suggested: GitHub repository under the **authorized work account** and GitHub Pa
 
 ## Next step
 
-Create or extract this folder locally; decide final mechanics and images; then give the AI agent `docs/AI_IMPLEMENTATION_PROMPT.md` and all references. Test on a real smartphone and coordinate the integration contract with the landing-page team.
+The folder already exists. Give Claude `docs/AI_IMPLEMENTATION_PROMPT.md`; read `docs/DECISIONS.md` first. Use the six existing references only for mood and color, not as pixel-perfect targets. Confirm unresolved Stamina, duration and funnel requirements. Test on a real smartphone and coordinate the integration contract with the landing-page team.
